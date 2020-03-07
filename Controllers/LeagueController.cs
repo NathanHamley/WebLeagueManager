@@ -3,28 +3,36 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using WebLeague.Data;
 using WebLeague.Models;
 
 namespace WebLeague.Controllers
 {
-    [Authorize]
     public class LeagueController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly ApplicationDbContext context;
 
-        public LeagueController(ApplicationDbContext context)
+        private readonly UserManager<ApplicationUser> userManager;
+
+        private IIncludableQueryable<League, ApplicationUser> ContextWithUser => context.League.Include(league => league.User);
+
+        public LeagueController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
-            _context = context;
+            this.context = context;
+            this.userManager = userManager;
         }
 
         // GET: League
         public async Task<IActionResult> Index()
         {
-            return View(await _context.League.ToListAsync());
+            ApplicationUser user = await getCurrentUser();
+            List<League> list = await context.League.Where(league => league.User.Id == user.Id).ToListAsync();
+            return View(list);
         }
 
         // GET: League/Details/5
@@ -34,17 +42,15 @@ namespace WebLeague.Controllers
             {
                 return NotFound();
             }
-
-            var league = await _context.League
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var user = await getCurrentUser();
+            var league = await ContextWithUser
+                .FirstOrDefaultAsync(filterByIdAndUser(id, user));
             if (league == null)
             {
                 return NotFound();
             }
-
             return View(league);
         }
-
         // GET: League/Create
         public IActionResult Create()
         {
@@ -58,10 +64,12 @@ namespace WebLeague.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Name,CreationDate")] League league)
         {
-            if (ModelState.IsValid)
+            var user = await getCurrentUser();
+            if (ModelState.IsValid && user != null)
             {
-                _context.Add(league);
-                await _context.SaveChangesAsync();
+                league.User = user;
+                context.Add(league);
+                await context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
             return View(league);
@@ -74,8 +82,8 @@ namespace WebLeague.Controllers
             {
                 return NotFound();
             }
-
-            var league = await _context.League.FindAsync(id);
+            var user = await getCurrentUser();
+            var league = await ContextWithUser.SingleOrDefaultAsync(filterByIdAndUser(id, user));
             if (league == null)
             {
                 return NotFound();
@@ -94,13 +102,16 @@ namespace WebLeague.Controllers
             {
                 return NotFound();
             }
-
+            if (! await userOwnsLeague(id))
+            {
+                return Forbid();
+            }
             if (ModelState.IsValid)
             {
                 try
                 {
-                    _context.Update(league);
-                    await _context.SaveChangesAsync();
+                    context.Update(league);
+                    await context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -125,9 +136,9 @@ namespace WebLeague.Controllers
             {
                 return NotFound();
             }
-
-            var league = await _context.League
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var user = await getCurrentUser();
+            var league = await ContextWithUser
+                .FirstOrDefaultAsync(filterByIdAndUser(id, user));
             if (league == null)
             {
                 return NotFound();
@@ -141,15 +152,44 @@ namespace WebLeague.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var league = await _context.League.FindAsync(id);
-            _context.League.Remove(league);
-            await _context.SaveChangesAsync();
+            var user = await getCurrentUser();
+            var league = await ContextWithUser.SingleOrDefaultAsync(filterByIdAndUser(id, user));
+            context.League.Remove(league);
+            await context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
+        }
+
+        private static System.Linq.Expressions.Expression<Func<League, bool>> filterByIdAndUser(int? id, ApplicationUser user)
+        {
+            return league => league.Id == id && league.User.Id == user.Id;
+        }
+
+        private async Task<bool> userOwnsLeague(League league)
+        {
+            var user = await getCurrentUser();
+            if (league == null || league.User == null || league.User.Id != user.Id)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        private async Task<bool> userOwnsLeague(int leagueId)
+        {
+            var user = await getCurrentUser();
+            var existing = await ContextWithUser.AsNoTracking()
+                                                .SingleOrDefaultAsync(existing => existing.Id == leagueId);
+            return existing == null || existing.User == null ? false : user.Id == existing.User.Id;
+        }
+
+        private async Task<ApplicationUser> getCurrentUser()
+        {
+            return await userManager.GetUserAsync(HttpContext.User);
         }
 
         private bool LeagueExists(int id)
         {
-            return _context.League.Any(e => e.Id == id);
+            return context.League.Any(e => e.Id == id);
         }
     }
 }

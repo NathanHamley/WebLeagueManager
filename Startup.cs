@@ -18,6 +18,8 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using WebLeague.Services;
 using WebLeague.Configuration;
 using WebLeague.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Authorization;
 
 namespace WebLeague
 {
@@ -36,8 +38,7 @@ namespace WebLeague
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection")));
-           // services.AddDbContext<LeagueContext>(options =>
-           //      options.UseSqlServer(Configuration.GetConnectionString("LeagueContext")));
+
             services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             services.AddControllersWithViews();
@@ -46,6 +47,12 @@ namespace WebLeague
             services.Configure<MailSettings>(Configuration.GetSection("MailSettings"));
             IdentityConfiguration.ConfigureIdentity(services);
             services.AddRazorPages();
+
+            services.AddControllers(config =>
+            {
+                var policy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+                config.Filters.Add(new AuthorizeFilter(policy));
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
