@@ -1,0 +1,100 @@
+﻿@model WebLeague.Models.Season
+
+@{
+    ViewData["Title"] = "Edit";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var statusList = Enum.GetValues(typeof(SeasonStatus));
+}
+
+<h1>Edit</h1>
+
+<h4>Season</h4>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            @Html.Hidden("LeagueId")
+            <div class="form-group">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+
+                @foreach (var radiotext in statusList)
+                {
+                <div class="form-control">
+                    @Html.RadioButton("Status", radiotext.ToString())
+                    @radiotext.ToString()
+                </div>
+                }
+                  
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+
+                @*<div class="form-group">
+                <label asp-for="Status" class="control-label"></label>
+                <input asp-for="Status" class="form-control" />
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>*@
+                <div class="form-group">
+                    <input type="submit" value="Save" class="btn btn-primary" />
+                </div>
+        </form>
+    </div>
+    <div class="col-md-6">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>
+                        @Html.DisplayNameFor(model => model.Teams[0].Name)
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Teams)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => item.Name)
+                        </td>
+                        <td>
+                            @if (Model.Status == SeasonStatus.Not_Started)
+                            {
+                                <form asp-action="DeleteTeam">
+
+                                    @Html.Hidden("LeagueId")
+                                    <input type="hidden" asp-for="Id" />
+                                    <input type="hidden" name="teamId" value="@item.Id" />
+                                    <input type="submit" value="Delete" class="btn btn-danger" />
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (Model.Status == SeasonStatus.Not_Started)
+        {
+            <form asp-action="CreateTeam">
+                @Html.Hidden("LeagueId")
+                <input type="hidden" asp-for="Id" />
+                <div class="form-group">
+                    <label for="teamName" class="control-label"></label>
+                    <input type="text" name="teamName" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Add Team" class="btn btn-primary" />
+                </div>
+            </form>
+        }
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index" asp-route-leagueId="@ViewData["LeagueId"]">Back to List</a>
+</div>
+

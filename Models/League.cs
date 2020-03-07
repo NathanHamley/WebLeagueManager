@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace WebLeague.Models
 {
@@ -16,6 +14,8 @@ namespace WebLeague.Models
         public DateTime CreationDate { get; set; }
 
         public virtual ApplicationUser User { get; set; }
+
+        public virtual ICollection<Season> Seasons { get; set; }
 
     }
 }

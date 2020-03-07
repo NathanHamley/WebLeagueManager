@@ -1,5 +1,3 @@
-using System;
-
 namespace WebLeague.Models
 {
     public class ErrorViewModel

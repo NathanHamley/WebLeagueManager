@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebLeague.Data;
 
 namespace WebLeague.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200307185708_Add_Teams")]
+    partial class Add_Teams
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -259,9 +261,14 @@ namespace WebLeague.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<int?>("TeamsId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LeagueId");
+
+                    b.HasIndex("TeamsId");
 
                     b.ToTable("Season");
                 });
@@ -276,12 +283,7 @@ namespace WebLeague.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("SeasonId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("SeasonId");
 
                     b.ToTable("Team");
                 });
@@ -349,13 +351,10 @@ namespace WebLeague.Migrations
                     b.HasOne("WebLeague.Models.League", "League")
                         .WithMany("Seasons")
                         .HasForeignKey("LeagueId");
-                });
 
-            modelBuilder.Entity("WebLeague.Models.Team", b =>
-                {
-                    b.HasOne("WebLeague.Models.Season", null)
-                        .WithMany("Teams")
-                        .HasForeignKey("SeasonId");
+                    b.HasOne("WebLeague.Models.Team", "Teams")
+                        .WithMany()
+                        .HasForeignKey("TeamsId");
                 });
 #pragma warning restore 612, 618
         }

@@ -14,8 +14,7 @@
 <body>
 
     <div>
-        <h4>League</h4>
-        <hr />
+
         <dl class="row">
             <dt class="col-sm-2">
                 @Html.DisplayNameFor(model => model.Name)
@@ -30,8 +29,10 @@
                 @Html.DisplayFor(model => model.CreationDate)
             </dd>
         </dl>
+               
     </div>
     <div>
+        <a asp-controller="Seasons" asp-route-leagueId="@Model.Id" asp-action="Index">Show Seasons</a> |
         <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
         <a asp-action="Index">Back to List</a>
     </div>

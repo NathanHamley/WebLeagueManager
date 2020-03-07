@@ -1,37 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
-using WebLeague.Data;
 using WebLeague.Models;
+using WebLeague.Services;
 
 namespace WebLeague.Controllers
 {
-    public class LeagueController : Controller
+    public class LeagueController : BaseController
     {
-        private readonly ApplicationDbContext context;
 
-        private readonly UserManager<ApplicationUser> userManager;
+        private ILeagueRepository leagueRepository;
 
-        private IIncludableQueryable<League, ApplicationUser> ContextWithUser => context.League.Include(league => league.User);
-
-        public LeagueController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public LeagueController(UserManager<ApplicationUser> userManager, ILeagueRepository leagueService) : base(userManager)
         {
-            this.context = context;
-            this.userManager = userManager;
+            this.leagueRepository = leagueService;
         }
 
         // GET: League
         public async Task<IActionResult> Index()
         {
             ApplicationUser user = await getCurrentUser();
-            List<League> list = await context.League.Where(league => league.User.Id == user.Id).ToListAsync();
+            var list = await leagueRepository.FindLeaguesForUser(user.Id);
             return View(list);
         }
 
@@ -43,8 +33,9 @@ namespace WebLeague.Controllers
                 return NotFound();
             }
             var user = await getCurrentUser();
-            var league = await ContextWithUser
-                .FirstOrDefaultAsync(filterByIdAndUser(id, user));
+            var league = await leagueRepository.FindLeagueForIdAndUser(id, user.Id);
+            //var league = await ContextWithUser
+            //    .FirstOrDefaultAsync(filterByIdAndUser(id, user));
             if (league == null)
             {
                 return NotFound();
@@ -68,8 +59,7 @@ namespace WebLeague.Controllers
             if (ModelState.IsValid && user != null)
             {
                 league.User = user;
-                context.Add(league);
-                await context.SaveChangesAsync();
+                await leagueRepository.createLeague(league);
                 return RedirectToAction(nameof(Index));
             }
             return View(league);
@@ -83,7 +73,8 @@ namespace WebLeague.Controllers
                 return NotFound();
             }
             var user = await getCurrentUser();
-            var league = await ContextWithUser.SingleOrDefaultAsync(filterByIdAndUser(id, user));
+            var league = await leagueRepository.FindLeagueForIdAndUser(id, user.Id);
+           
             if (league == null)
             {
                 return NotFound();
@@ -102,7 +93,8 @@ namespace WebLeague.Controllers
             {
                 return NotFound();
             }
-            if (! await userOwnsLeague(id))
+            var user = await getCurrentUser();
+            if (! await leagueRepository.UserOwnsLeague(user.Id, id))
             {
                 return Forbid();
             }
@@ -110,12 +102,11 @@ namespace WebLeague.Controllers
             {
                 try
                 {
-                    context.Update(league);
-                    await context.SaveChangesAsync();
+                    await leagueRepository.UpdateLeague(league);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!LeagueExists(league.Id))
+                    if (!leagueRepository.LeagueExists(league.Id))
                     {
                         return NotFound();
                     }
@@ -137,8 +128,7 @@ namespace WebLeague.Controllers
                 return NotFound();
             }
             var user = await getCurrentUser();
-            var league = await ContextWithUser
-                .FirstOrDefaultAsync(filterByIdAndUser(id, user));
+            var league = await leagueRepository.FindLeagueForIdAndUser(id, user.Id);
             if (league == null)
             {
                 return NotFound();
@@ -153,15 +143,11 @@ namespace WebLeague.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var user = await getCurrentUser();
-            var league = await ContextWithUser.SingleOrDefaultAsync(filterByIdAndUser(id, user));
-            context.League.Remove(league);
-            await context.SaveChangesAsync();
+            if(await leagueRepository.UserOwnsLeague(user.Id, id))
+            {
+                await leagueRepository.DeleteLeague(id);
+            }
             return RedirectToAction(nameof(Index));
-        }
-
-        private static System.Linq.Expressions.Expression<Func<League, bool>> filterByIdAndUser(int? id, ApplicationUser user)
-        {
-            return league => league.Id == id && league.User.Id == user.Id;
         }
 
         private async Task<bool> userOwnsLeague(League league)
@@ -172,24 +158,6 @@ namespace WebLeague.Controllers
                 return false;
             }
             return true;
-        }
-
-        private async Task<bool> userOwnsLeague(int leagueId)
-        {
-            var user = await getCurrentUser();
-            var existing = await ContextWithUser.AsNoTracking()
-                                                .SingleOrDefaultAsync(existing => existing.Id == leagueId);
-            return existing == null || existing.User == null ? false : user.Id == existing.User.Id;
-        }
-
-        private async Task<ApplicationUser> getCurrentUser()
-        {
-            return await userManager.GetUserAsync(HttpContext.User);
-        }
-
-        private bool LeagueExists(int id)
-        {
-            return context.League.Any(e => e.Id == id);
         }
     }
 }
