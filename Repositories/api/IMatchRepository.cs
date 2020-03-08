@@ -10,6 +10,8 @@ namespace WebLeague.Repositories.api
     {
         Task saveMatch(Match match);
 
+        void updateResult(int matchId, int? homeScore, int? awayScore);
+
         Task deleteMatch(Match match);
 
         Task deleteMany(IEnumerable<Match> matches);

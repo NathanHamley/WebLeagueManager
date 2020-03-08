@@ -73,5 +73,28 @@ namespace WebLeague.Services.impl
 
                 .SingleOrDefaultAsync();
         }
+
+        public Task<Season> FindEverythingReadOnlyForSeason(int seasonId)
+        {
+            return context.Season.Where(season => season.Id == seasonId)
+
+                .Include(season => season.Matchdays)
+                    .ThenInclude(matchdays => matchdays.Matches)
+                        .ThenInclude(matches => matches.HomeTeam).AsNoTracking()
+
+                .Include(season => season.Teams).AsNoTracking()
+
+                .Include(season => season.Matchdays)
+                    .ThenInclude(matchdays => matchdays.Matches)
+                        .ThenInclude(matches => matches.AwayTeam).AsNoTracking()
+
+                .SingleOrDefaultAsync();
+        }
+
+        public Task deleteMany(IEnumerable<Season> seasons)
+        {
+            context.RemoveRange(seasons);
+            return context.SaveChangesAsync();
+        }
     }
 }

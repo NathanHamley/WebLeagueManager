@@ -16,12 +16,18 @@ namespace WebLeague.Configuration
 
         public static void AddApplicationDIMappings(IServiceCollection services)
         {
+            // Repositories
             services.AddScoped<ILeagueRepository, LeagueRepository>();
             services.AddScoped<ISeasonRepository, SeasonRepository>();
             services.AddScoped<ITeamRepository, TeamRepository>();
             services.AddScoped<IMatchdayRepository, MatchdayRepository>();
             services.AddScoped<IMatchRepository, MatchRepository>();
+
+
+            //Services
             services.AddScoped<IScheduleService, ScheduleService>();
+            services.AddScoped<IStandingsEvaluatorService, StandingsEvaluatorService>();
+            services.AddScoped<ICascadingDeleteService, CascadingDeleteService>();
         }
     }
 }

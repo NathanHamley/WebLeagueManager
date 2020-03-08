@@ -18,24 +18,38 @@ namespace WebLeague.Controllers
         private readonly ILeagueRepository leagueRepository;
         private readonly ISeasonRepository seasonRepository;
         private readonly ITeamRepository teamRepository;
-        private readonly IScheduleService scheduleService;
         private readonly IMatchdayRepository matchdayRepository;
         private readonly IMatchRepository matchRepository;
 
-        public SeasonsController(UserManager<ApplicationUser> userManager, ISeasonRepository seasonRepository,  
-            ILeagueRepository leagueRepository,
-            ITeamRepository teamRepository,
-            IScheduleService scheduleService,
-            IMatchdayRepository matchdayRepository,
-            IMatchRepository matchRepository) : base(userManager)
+        //Start of better architecture, add services rather than using repositories
+        //However wanted to get a quick first version for testing, learned that using repositories directly
+        //is not smart
+
+        private readonly IScheduleService scheduleService;
+        private readonly IStandingsEvaluatorService standingsEvaluatorService;
+        private readonly ICascadingDeleteService cascadingDeleteService;
+
+        public SeasonsController(UserManager<ApplicationUser> userManager,
+                                 ILeagueRepository leagueRepository,
+                                 ISeasonRepository seasonRepository,
+                                 ITeamRepository teamRepository,
+                                 IMatchdayRepository matchdayRepository,
+                                 IMatchRepository matchRepository,
+                                 IScheduleService scheduleService,
+                                 IStandingsEvaluatorService standingsEvaluatorService,
+                                 ICascadingDeleteService cascadingDeleteService) : base(userManager)
         {
-            this.seasonRepository = seasonRepository;
             this.leagueRepository = leagueRepository;
+            this.seasonRepository = seasonRepository;
             this.teamRepository = teamRepository;
-            this.scheduleService = scheduleService;
             this.matchdayRepository = matchdayRepository;
             this.matchRepository = matchRepository;
+            this.scheduleService = scheduleService;
+            this.standingsEvaluatorService = standingsEvaluatorService;
+            this.cascadingDeleteService = cascadingDeleteService;
         }
+
+
 
         // GET: Seasons?{leagueId}
         public async Task<IActionResult> Index(int leagueId)
@@ -167,7 +181,7 @@ namespace WebLeague.Controllers
             {
                 Team team = new Team();
                 team.Name = teamName;
-                teamRepository.saveTeam(team);
+                teamRepository.createTeam(team);
                 ensureTeamAdded(season, team);
                 await seasonRepository.UpdateSeason(season);
             }
@@ -207,6 +221,7 @@ namespace WebLeague.Controllers
         // GET: Seasons/Delete/5
         public async Task<IActionResult> Delete(int? id, int leagueId)
         {
+            SetLeagueIdViewData(leagueId);
             if (id == null)
             {
                 return NotFound();
@@ -237,25 +252,25 @@ namespace WebLeague.Controllers
                 return Forbid();
             }
 
-            var season = await seasonRepository.FindBySeasonIdAndLeagueIdWithSchedule(id, leagueId);
-            await fullDeleteSeason(season);
+            //var season = await seasonRepository.FindBySeasonIdAndLeagueIdWithSchedule(id, leagueId);
+            await cascadingDeleteService.deleteSeason(id, leagueId);
             return RedirectToAction(nameof(Index), new { leagueId });
         }
 
-        private async Task fullDeleteSeason(Season season)
-        {
-            List<Match> allMatches = new List<Match>();
-            List<Matchday> allMatchDays = new List<Matchday>();
-            foreach(var matchday in season.Matchdays)
-            {
-                allMatches.AddRange(matchday.Matches);
-            }
-            allMatchDays.AddRange(season.Matchdays);
-            await matchRepository.deleteMany(allMatches);
-            await matchdayRepository.deleteMany(allMatchDays);
-            teamRepository.deleteMany(season.Teams);
-            await seasonRepository.DeleteSeason(season.Id);
-        }
+        //private async Task fullDeleteSeason(Season season)
+        //{
+        //    List<Match> allMatches = new List<Match>();
+        //    List<Matchday> allMatchDays = new List<Matchday>();
+        //    foreach(var matchday in season.Matchdays)
+        //    {
+        //        allMatches.AddRange(matchday.Matches);
+        //    }
+        //    allMatchDays.AddRange(season.Matchdays);
+        //    await matchRepository.deleteMany(allMatches);
+        //    await matchdayRepository.deleteMany(allMatchDays);
+        //    teamRepository.deleteMany(season.Teams);
+        //    await seasonRepository.DeleteSeason(season.Id);
+        //}
 
         public async Task<IActionResult> Standings(int? id, int leagueId)
         {
@@ -271,8 +286,15 @@ namespace WebLeague.Controllers
             {
                 return NotFound();
             }
+            await SetStandingsViewData(season);
 
             return View(season);
+        }
+
+        private async Task SetStandingsViewData(Season season)
+        {
+            var standingsDto = await standingsEvaluatorService.createStandings(season.Id); ;
+            ViewBag.Standings = standingsDto.Standings;
         }
 
         [HttpPost]
@@ -288,10 +310,24 @@ namespace WebLeague.Controllers
             {
                 return NotFound();
             }
-            await saveMatchdays(model.Matchdays);
-
-            //await seasonRepository.UpdateSeason(model);
+            // Individually update results, as nothing else should be done here
+            // Rethink vie/model/controller thing to add viewmodel so this is clean
+            // Focus on getting it working for now
+            saveResultsOnly(model.Matchdays);
             return RedirectToAction(nameof(Standings), new { id, leagueId });
+        }
+
+        private void saveResultsOnly(IList<Matchday> matchdays)
+        {
+            foreach (var matchday in matchdays)
+            {
+                foreach (var match in matchday.Matches)
+                {
+
+                    matchRepository.updateResult(match.Id, match.HomeScore, match.AwayScore);
+
+                }
+            }
         }
 
         private async Task saveMatchdays(IList<Matchday> matchdays)

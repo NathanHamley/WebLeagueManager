@@ -13,9 +13,10 @@ namespace WebLeague.Services.impl
     {
         public IList<Matchday> CreateSchedule(IList<Team> teams, bool withReverseFixtures)
         {
+            var teamToMakeEven = new Team();
             if(teams.Count % 2 != 0)
             {
-                teams.Add(new Team());
+                teams.Add(teamToMakeEven);
             }
             teams.Shuffle();
 
@@ -34,6 +35,7 @@ namespace WebLeague.Services.impl
             {
                 matchdays.AddRange(createReverseMatchdays(matchdays));
             }
+            teams.Remove(teamToMakeEven);
             return matchdays;
         }
 
@@ -75,6 +77,11 @@ namespace WebLeague.Services.impl
             IList<Match> matches = new List<Match>();
             for(int i=0; i<teams.Count / 2; i++)
             {
+                // Don't create match if empty team helper team would be involved
+                if(teams[i].Name == null || teams[teams.Count - 1 - i].Name == null)
+                {
+                    continue;
+                }
                 //Randomize home and away
                 if (random.NextDouble() > 0.5)
                 {

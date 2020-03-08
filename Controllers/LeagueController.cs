@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebLeague.Models;
 using WebLeague.Services;
+using WebLeague.Services.api;
 
 namespace WebLeague.Controllers
 {
@@ -12,9 +13,13 @@ namespace WebLeague.Controllers
 
         private ILeagueRepository leagueRepository;
 
-        public LeagueController(UserManager<ApplicationUser> userManager, ILeagueRepository leagueService) : base(userManager)
+        private ICascadingDeleteService cascadingDeleteService;
+
+        public LeagueController(UserManager<ApplicationUser> userManager, ILeagueRepository leagueRepository,
+            ICascadingDeleteService cascadingDeleteService) : base(userManager)
         {
-            this.leagueRepository = leagueService;
+            this.leagueRepository = leagueRepository;
+            this.cascadingDeleteService = cascadingDeleteService;
         }
 
         // GET: League
@@ -142,11 +147,7 @@ namespace WebLeague.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var user = await getCurrentUser();
-            if(await leagueRepository.UserOwnsLeague(user.Id, id))
-            {
-                await leagueRepository.DeleteLeague(id);
-            }
+            await cascadingDeleteService.deleteEntireLeague(id, await getCurrentUserId());
             return RedirectToAction(nameof(Index));
         }
 

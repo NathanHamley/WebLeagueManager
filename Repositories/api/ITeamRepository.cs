@@ -8,7 +8,7 @@ namespace WebLeague.Repositories.api
 {
     public interface ITeamRepository
     {
-        int saveTeam(Team team);
+        int createTeam(Team team);
 
         int deleteTeam(int teamId);
 

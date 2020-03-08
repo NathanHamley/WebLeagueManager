@@ -9,6 +9,38 @@
 <div class="jumbotron">
     <div class="container">
         <h3 class="display-3">Standings for League @ViewData["leagueName"] in Season @Model.Name</h3>
+        <table class="table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Played</th>
+                    <th>Wins</th>
+                    <th>Draws</th>
+                    <th>Losses</th>
+                    <th>GoalsFor</th>
+                    <th>GoalsAgainst</th>
+                    <th>GoalDiff</th>
+                    <th>Points</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var standing in (@ViewBag.Standings as List<WebLeague.Services.Data.StandingsTeam>) )
+                {
+                <tr>
+                    <td>@standing.Name</td>
+                    <td>@standing.Played</td>
+                    <td>@standing.Wins</td>
+                    <td>@standing.Draws</td>
+                    <td>@standing.Losses</td>
+                    <td>@standing.GoalsFor</td>
+                    <td>@standing.GoalsAgainst</td>
+                    <td>@(standing.GoalsFor-standing.GoalsAgainst)</td>
+                    <td>@standing.Points</td>
+                </tr>
+                }
+            </tbody>
+
+        </table>
     </div>
 </div>
 
@@ -40,10 +72,8 @@
                             @Html.HiddenFor(model => model.Matchdays[i].Matches[j].Id)
                             <tr>
                                 <td>@Html.DisplayFor(modelItem => Model.Matchdays[i].Matches[j].HomeTeam.Name)</td>
-                                @Html.HiddenFor(model => Model.Matchdays[i].Matches[j].HomeTeam.Name)
                                 <td>@Html.TextBoxFor(modelItem => Model.Matchdays[i].Matches[j].HomeScore, new { min = 0, max = 99, type = "number", style = "width: 65px;" })</td>
                                 <td>@Html.DisplayFor(modelItem => Model.Matchdays[i].Matches[j].AwayTeam.Name)</td>
-                                @Html.HiddenFor(model => Model.Matchdays[i].Matches[j].AwayTeam.Name)
                                 <td>@Html.TextBoxFor(modelItem => Model.Matchdays[i].Matches[j].AwayScore, new { min = 0, max = 99, type = "number", style = "width: 65px;" })</td>
                                 <td></td>
                             </tr>

@@ -18,16 +18,9 @@ namespace WebLeague.Repositories.impl
             this.context = context;
         }
 
-        public int saveTeam(Team team)
+        public int createTeam(Team team)
         {
-            if(team.Id <= 0)
-            {
-                context.Team.Add(team);
-            }else
-            {
-                context.Team.Update(team);
-            }
-            
+            context.Team.Add(team);
             return context.SaveChanges();
         }
 

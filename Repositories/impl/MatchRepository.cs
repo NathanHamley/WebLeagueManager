@@ -41,5 +41,14 @@ namespace WebLeague.Repositories.impl
             }
             return context.SaveChangesAsync();
         }
+
+        public void updateResult(int matchId, int? homeScore, int? awayScore)
+        {
+            var match = context.Match.Where(m => m.Id == matchId).FirstOrDefault();
+            match.HomeScore = homeScore;
+            match.AwayScore = awayScore;
+            context.Match.Update(match);
+            context.SaveChanges();
+        }
     }
 }

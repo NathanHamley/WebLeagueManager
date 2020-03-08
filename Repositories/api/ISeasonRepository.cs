@@ -22,5 +22,9 @@ namespace WebLeague.Services.api
         Task<int> DeleteSeason(int seasonId);
 
         bool SeasonExists(int seasonId);
+
+        Task<Season> FindEverythingReadOnlyForSeason(int seasonId);
+
+        Task deleteMany(IEnumerable<Season> seasons);
     }
 }
