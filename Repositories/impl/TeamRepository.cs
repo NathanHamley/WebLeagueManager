@@ -18,23 +18,30 @@ namespace WebLeague.Repositories.impl
             this.context = context;
         }
 
-        public Task createTeam(Team team)
+        public int saveTeam(Team team)
         {
-            context.Team.Add(team);
-            return context.SaveChangesAsync();
+            if(team.Id <= 0)
+            {
+                context.Team.Add(team);
+            }else
+            {
+                context.Team.Update(team);
+            }
+            
+            return context.SaveChanges();
         }
 
-        public Task createTeams(IEnumerable<Team> teams)
+        public int deleteTeam(int teamId)
         {
-            context.Team.AddRange(teams);
-            return context.SaveChangesAsync();
-        }
-
-        public async Task<int> deleteTeam(int teamId)
-        {
-            var team = await context.Team.FindAsync(teamId);
+            var team = context.Team.Find(teamId);
             context.Team.Remove(team);
-            return await context.SaveChangesAsync();
+            return context.SaveChanges();
+        }
+
+        public void deleteMany(IEnumerable<Team> teams)
+        {
+            context.Team.RemoveRange(teams);
+            context.SaveChanges();
         }
     }
 }

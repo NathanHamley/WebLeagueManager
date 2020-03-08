@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebLeague.Data;
 
 namespace WebLeague.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20200307213841_Add-match-and-matchdays")]
+    partial class Addmatchandmatchdays
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -243,39 +245,6 @@ namespace WebLeague.Migrations
                     b.ToTable("League");
                 });
 
-            modelBuilder.Entity("WebLeague.Models.Match", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<int?>("AwayScore")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("AwayTeamId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("HomeScore")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("HomeTeamId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("MatchdayId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AwayTeamId");
-
-                    b.HasIndex("HomeTeamId");
-
-                    b.HasIndex("MatchdayId");
-
-                    b.ToTable("Match");
-                });
-
             modelBuilder.Entity("WebLeague.Models.Matchday", b =>
                 {
                     b.Property<int>("Id")
@@ -395,21 +364,6 @@ namespace WebLeague.Migrations
                     b.HasOne("WebLeague.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId");
-                });
-
-            modelBuilder.Entity("WebLeague.Models.Match", b =>
-                {
-                    b.HasOne("WebLeague.Models.Team", "AwayTeam")
-                        .WithMany()
-                        .HasForeignKey("AwayTeamId");
-
-                    b.HasOne("WebLeague.Models.Team", "HomeTeam")
-                        .WithMany()
-                        .HasForeignKey("HomeTeamId");
-
-                    b.HasOne("WebLeague.Models.Matchday", null)
-                        .WithMany("Matches")
-                        .HasForeignKey("MatchdayId");
                 });
 
             modelBuilder.Entity("WebLeague.Models.Matchday", b =>

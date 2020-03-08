@@ -57,5 +57,21 @@ namespace WebLeague.Services.impl
         {
             return season => season.Id == seasonId && season.League.Id == leagueId;
         }
+
+        public  Task<Season> FindBySeasonIdAndLeagueIdWithSchedule(int? seasonId, int? leagueId)
+        {
+            return context.Season
+                .Where(filterBySeasonAndLeague(seasonId, leagueId))
+
+                .Include(season => season.Matchdays)
+                    .ThenInclude(matchdays => matchdays.Matches)
+                        .ThenInclude(matches => matches.HomeTeam).AsNoTracking()
+
+                .Include(season => season.Matchdays)
+                    .ThenInclude(matchdays => matchdays.Matches)
+                        .ThenInclude(matches => matches.AwayTeam).AsNoTracking()
+
+                .SingleOrDefaultAsync();
+        }
     }
 }

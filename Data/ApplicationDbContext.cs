@@ -23,5 +23,9 @@ namespace WebLeague.Data
         public DbSet<Season> Season { get; set; }
 
         public DbSet<Team> Team{ get; set; }
+
+        public DbSet<Matchday> Matchday { get; set; }
+
+        public DbSet<Match> Match { get; set; }
     }
 }

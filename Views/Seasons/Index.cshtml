@@ -16,6 +16,9 @@
             <th>
                 @Html.DisplayNameFor(model => model.Name)
             </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Status)
+            </th>
             <th></th>
         </tr>
     </thead>
@@ -26,8 +29,15 @@
                 @Html.DisplayFor(modelItem => item.Name)
             </td>
             <td>
+                @Html.DisplayFor(modelItem => item.Status)
+            </td>
+            <td>
                 <a asp-action="Edit" asp-route-id="@item.Id" asp-route-leagueId="@ViewData["leagueId"]">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id" asp-route-leagueId="@ViewData["leagueId"]">Details</a> |
+                <a asp-action="Details" asp-route-id="@item.Id" asp-route-leagueId="@ViewData["leagueId"]">Details</a>|
+                @if (item.Status != SeasonStatus.Not_Started)
+                {
+                    <a asp-action="Standings" asp-route-id="@item.Id" asp-route-leagueId="@ViewData["leagueId"]">Standings</a>@Html.Raw("|");
+                }
                 <a asp-action="Delete" asp-route-id="@item.Id" asp-route-leagueId="@ViewData["leagueId"]">Delete</a>
             </td>
         </tr>

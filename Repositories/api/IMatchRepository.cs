@@ -6,12 +6,12 @@ using WebLeague.Models;
 
 namespace WebLeague.Repositories.api
 {
-    public interface ITeamRepository
+    public interface IMatchRepository
     {
-        int saveTeam(Team team);
+        Task saveMatch(Match match);
 
-        int deleteTeam(int teamId);
+        Task deleteMatch(Match match);
 
-        void deleteMany(IEnumerable<Team> teams);
+        Task deleteMany(IEnumerable<Match> matches);
     }
 }

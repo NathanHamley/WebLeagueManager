@@ -13,6 +13,8 @@ namespace WebLeague.Services.api
 
         Task<Season> FindBySeasonIdAndLeagueId(int? seasonId, int? leagueId);
 
+        Task<Season> FindBySeasonIdAndLeagueIdWithSchedule(int? seasonId, int? leagueId);
+
         Task CreateSeason(Season season);
 
         Task UpdateSeason(Season season);

@@ -1,0 +1,67 @@
+﻿@model WebLeague.Models.Season
+
+@{
+    ViewData["Title"] = "Standings";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<div class="jumbotron">
+    <div class="container">
+        <h3 class="display-3">Standings for League @ViewData["leagueName"] in Season @Model.Name</h3>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Example row of columns -->
+    <form asp-action="EditStandings">
+        <input type="hidden" asp-for="Id" />
+        @Html.Hidden("LeagueId")
+    <div class="row">
+        @for (var i = 0; i < Model.Matchdays.Count; i++)
+        {
+            @Html.HiddenFor(model => model.Matchdays[i].Id)
+            @Html.HiddenFor(model => model.Matchdays[i].Number)
+            <div class="col-md-4">
+                <h2>Matchday @Model.Matchdays[i].Number</h2>
+                <table class="align-content-center">
+                    <thead>
+                        <tr>
+                            <th>@Html.DisplayNameFor(model => model.Matchdays[0].Matches[0].HomeTeam)</th>
+                            <th>@Html.DisplayNameFor(model => model.Matchdays[0].Matches[0].HomeScore)</th>
+                            <th>@Html.DisplayNameFor(model => model.Matchdays[0].Matches[0].AwayTeam)</th>
+                            <th>@Html.DisplayNameFor(model => model.Matchdays[0].Matches[0].AwayScore)</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var j = 0; j < Model.Matchdays[i].Matches.Count; j++)
+                        {
+                            @Html.HiddenFor(model => model.Matchdays[i].Matches[j].Id)
+                            <tr>
+                                <td>@Html.DisplayFor(modelItem => Model.Matchdays[i].Matches[j].HomeTeam.Name)</td>
+                                @Html.HiddenFor(model => Model.Matchdays[i].Matches[j].HomeTeam.Name)
+                                <td>@Html.TextBoxFor(modelItem => Model.Matchdays[i].Matches[j].HomeScore, new { min = 0, max = 99, type = "number", style = "width: 65px;" })</td>
+                                <td>@Html.DisplayFor(modelItem => Model.Matchdays[i].Matches[j].AwayTeam.Name)</td>
+                                @Html.HiddenFor(model => Model.Matchdays[i].Matches[j].AwayTeam.Name)
+                                <td>@Html.TextBoxFor(modelItem => Model.Matchdays[i].Matches[j].AwayScore, new { min = 0, max = 99, type = "number", style = "width: 65px;" })</td>
+                                <td></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+        <hr>
+        <div class="form-group">
+            <input type="submit" value="Save" class="btn btn-primary" />
+        </div>
+    </form>
+    <div class="container">
+        <a asp-action="Index" asp-route-leagueId="@ViewData["LeagueId"]">Back to List</a>
+    </div>
+</div> <!-- /container -->
+
+
+

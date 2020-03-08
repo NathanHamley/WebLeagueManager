@@ -18,14 +18,23 @@ namespace WebLeague.Controllers
         private readonly ILeagueRepository leagueRepository;
         private readonly ISeasonRepository seasonRepository;
         private readonly ITeamRepository teamRepository;
+        private readonly IScheduleService scheduleService;
+        private readonly IMatchdayRepository matchdayRepository;
+        private readonly IMatchRepository matchRepository;
 
         public SeasonsController(UserManager<ApplicationUser> userManager, ISeasonRepository seasonRepository,  
             ILeagueRepository leagueRepository,
-            ITeamRepository teamRepository) : base(userManager)
+            ITeamRepository teamRepository,
+            IScheduleService scheduleService,
+            IMatchdayRepository matchdayRepository,
+            IMatchRepository matchRepository) : base(userManager)
         {
             this.seasonRepository = seasonRepository;
             this.leagueRepository = leagueRepository;
             this.teamRepository = teamRepository;
+            this.scheduleService = scheduleService;
+            this.matchdayRepository = matchdayRepository;
+            this.matchRepository = matchRepository;
         }
 
         // GET: Seasons?{leagueId}
@@ -83,19 +92,6 @@ namespace WebLeague.Controllers
                 return RedirectToAction(nameof(Index), new { leagueId });
             }
             return View(season);
-        }
-
-        private bool validateTeams(IList<Team> teams)
-        {
-            bool valid = true;
-            foreach(var team in teams)
-            {
-                if(string.IsNullOrWhiteSpace(team.Name))
-                {
-                    valid = false;
-                }
-            }
-            return valid;
         }
 
         // GET: Seasons/Edit/5
@@ -171,7 +167,7 @@ namespace WebLeague.Controllers
             {
                 Team team = new Team();
                 team.Name = teamName;
-                await teamRepository.createTeam(team);
+                teamRepository.saveTeam(team);
                 ensureTeamAdded(season, team);
                 await seasonRepository.UpdateSeason(season);
             }
@@ -191,17 +187,21 @@ namespace WebLeague.Controllers
                 return Forbid();
             }
 
-            await teamRepository.deleteTeam(teamId);
+            teamRepository.deleteTeam(teamId);
             return RedirectToAction(nameof(Edit), new { Id = id, leagueId });
         }
 
-        private void ensureTeamAdded(Season season, Team team)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StartSeason(int id, int leagueId)
         {
-            if(season.Teams == null)
-            {
-                season.Teams = new List<Team>();
-            }
-            season.Teams.Add(team);
+            Season season = await seasonRepository.FindBySeasonIdAndLeagueId(id, leagueId);
+            var matchdays = scheduleService.CreateSchedule(season.Teams);
+            await saveMatchdays(matchdays);
+            season.Matchdays = matchdays;
+            season.Status = SeasonStatus.Ongoing;
+            await seasonRepository.UpdateSeason(season);
+            return RedirectToAction(nameof(Index), new { leagueId });
         }
 
         // GET: Seasons/Delete/5
@@ -237,12 +237,85 @@ namespace WebLeague.Controllers
                 return Forbid();
             }
 
-            var season = await seasonRepository.FindBySeasonIdAndLeagueId(id, leagueId);
-            await seasonRepository.DeleteSeason(id);
+            var season = await seasonRepository.FindBySeasonIdAndLeagueIdWithSchedule(id, leagueId);
+            await fullDeleteSeason(season);
             return RedirectToAction(nameof(Index), new { leagueId });
         }
 
+        private async Task fullDeleteSeason(Season season)
+        {
+            List<Match> allMatches = new List<Match>();
+            List<Matchday> allMatchDays = new List<Matchday>();
+            foreach(var matchday in season.Matchdays)
+            {
+                allMatches.AddRange(matchday.Matches);
+            }
+            allMatchDays.AddRange(season.Matchdays);
+            await matchRepository.deleteMany(allMatches);
+            await matchdayRepository.deleteMany(allMatchDays);
+            teamRepository.deleteMany(season.Teams);
+            await seasonRepository.DeleteSeason(season.Id);
+        }
 
+        public async Task<IActionResult> Standings(int? id, int leagueId)
+        {
+            SetLeagueIdViewData(leagueId);
+            await SetLeagueNameViewData(leagueId);
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var season = await seasonRepository.FindBySeasonIdAndLeagueIdWithSchedule(id, leagueId);
+            if (season == null || season.Status == SeasonStatus.Not_Started)
+            {
+                return NotFound();
+            }
+
+            return View(season);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditStandings(int? id, int leagueId, Season model)
+        {
+            if (!await leagueRepository.UserOwnsLeague(await getCurrentUserId(), leagueId))
+            {
+                return Forbid();
+            }
+
+            if (id != model.Id)
+            {
+                return NotFound();
+            }
+            await saveMatchdays(model.Matchdays);
+
+            //await seasonRepository.UpdateSeason(model);
+            return RedirectToAction(nameof(Standings), new { id, leagueId });
+        }
+
+        private async Task saveMatchdays(IList<Matchday> matchdays)
+        {
+            foreach (var matchday in matchdays)
+            {
+                foreach (var match in matchday.Matches)
+                {
+
+                    await matchRepository.saveMatch(match);
+
+                }
+                await matchdayRepository.saveMatchday(matchday);
+            }
+        }
+
+        private void ensureTeamAdded(Season season, Team team)
+        {
+            if (season.Teams == null)
+            {
+                season.Teams = new List<Team>();
+            }
+            season.Teams.Add(team);
+        }
         private async Task SetLeagueNameViewData(int leagueId)
         {
             var userId = await getCurrentUserId();

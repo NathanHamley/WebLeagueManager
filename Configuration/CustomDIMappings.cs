@@ -19,6 +19,9 @@ namespace WebLeague.Configuration
             services.AddScoped<ILeagueRepository, LeagueRepository>();
             services.AddScoped<ISeasonRepository, SeasonRepository>();
             services.AddScoped<ITeamRepository, TeamRepository>();
+            services.AddScoped<IMatchdayRepository, MatchdayRepository>();
+            services.AddScoped<IMatchRepository, MatchRepository>();
+            services.AddScoped<IScheduleService, ScheduleService>();
         }
     }
 }

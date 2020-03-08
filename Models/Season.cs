@@ -15,6 +15,8 @@ namespace WebLeague.Models
 
         public SeasonStatus Status { get; set; }
 
+        public virtual IList<Matchday> Matchdays { get; set; }
+
     }
 
     public enum SeasonStatus
