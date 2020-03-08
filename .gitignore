@@ -343,3 +343,5 @@ healthchecksdb
 
 # for easier local development but not accidentally adding secrets to vcs
 appsettings.Development.json
+appsettings.production.json
+appsettings.Production.json
