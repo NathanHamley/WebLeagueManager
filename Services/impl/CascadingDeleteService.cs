@@ -61,5 +61,10 @@ namespace WebLeague.Services.impl
             await matchdayRepository.deleteMany(allMatchDays);
             teamRepository.deleteMany(season.Teams);
         }
+
+        public async Task deleteTeam(int teamId)
+        {
+            await teamRepository.deleteTeam(teamId);
+        }
     }
 }

@@ -168,11 +168,12 @@ namespace WebLeague.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateTeam(int leagueId, [Bind("Id")] Season pSeason, string teamName)
         {
+            var seasonId = pSeason.Id;
             if (!await leagueRepository.UserOwnsLeague(await getCurrentUserId(), leagueId))
             {
                 return Forbid();
             }
-            var season = await seasonRepository.FindBySeasonIdAndLeagueId(pSeason.Id, leagueId);
+            var season = await seasonRepository.FindBySeasonIdAndLeagueId(seasonId, leagueId);
             if(season == null)
             {
                 return NotFound();
@@ -185,7 +186,7 @@ namespace WebLeague.Controllers
                 ensureTeamAdded(season, team);
                 await seasonRepository.UpdateSeason(season);
             }
-            return RedirectToAction(nameof(Edit), new { Id = season.Id, leagueId });
+            return RedirectToAction(nameof(Edit), new { Id = seasonId, leagueId });
         }
 
         [HttpPost]
@@ -201,8 +202,8 @@ namespace WebLeague.Controllers
                 return Forbid();
             }
 
-            teamRepository.deleteTeam(teamId);
-            return RedirectToAction(nameof(Edit), new { Id = id, leagueId });
+            await cascadingDeleteService.deleteTeam(teamId);
+            return RedirectToAction(nameof(Edit), new { Id = id, leagueId = leagueId });
         }
 
         [HttpPost]

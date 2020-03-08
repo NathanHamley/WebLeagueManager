@@ -12,6 +12,8 @@ namespace WebLeague.Services.api
         Task deleteEntireLeague(int id, string userId);
 
         Task deleteSeason(int seasonId, int leagueId);
+
+        Task deleteTeam(int teamId);
         
     }
 }

@@ -24,9 +24,9 @@ namespace WebLeague.Repositories.impl
             return context.SaveChanges();
         }
 
-        public int deleteTeam(int teamId)
+        public async Task<int> deleteTeam(int teamId)
         {
-            var team = context.Team.Find(teamId);
+            var team = await context.Team.FindAsync(teamId);
             context.Team.Remove(team);
             return context.SaveChanges();
         }

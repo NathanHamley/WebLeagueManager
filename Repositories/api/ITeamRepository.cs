@@ -10,7 +10,7 @@ namespace WebLeague.Repositories.api
     {
         int createTeam(Team team);
 
-        int deleteTeam(int teamId);
+        Task<int> deleteTeam(int teamId);
 
         void deleteMany(IEnumerable<Team> teams);
     }
